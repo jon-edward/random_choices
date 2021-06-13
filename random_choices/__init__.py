@@ -1,1 +1,1 @@
-from .random_choices import RandomChoices, WeightedChoice, UniformChoice
+from .random_choices import Randomizer, WeightedChoice, UniformChoice
