@@ -143,10 +143,10 @@ class Randomizer:
         if self.is_empty:
             return []
 
-        choices = deepcopy(self.population)
+        population = deepcopy(self.population)
 
         def weights() -> List[float]:
-            return [c.weight for c in choices]
+            return [c.weight for c in population]
 
         results = []
 
@@ -160,10 +160,27 @@ class Randomizer:
             while pick_random > 0.0:
                 choices_i += 1
                 pick_random -= w[choices_i]
-            results += [choices[choices_i].return_value]
-            del choices[choices_i]
+            results += [population[choices_i].return_value]
+            del population[choices_i]
 
         if not replenish:
-            self.population = choices
+            self.population = population
 
         return results
+
+    def choices(self, k: int, replace: bool = True, replenish: bool = True) -> List[Any]:
+        """
+        Picks choices in self.population based on their weighting. This is a convenience function that mirrors the
+        naming of 'random.choices'.
+
+        :param k: Number of iterations for picking. This is the maximum length of the returned list.
+        :param replace: Defines whether to use replacement when picking.
+        :param replenish: Defines whether to replenish the choices when done picking without replacement.
+        """
+
+        if not replace and replenish:
+            raise Exception("Replenish can only be False when replace is False.")
+        if replace:
+            return self.pick_with_replacement(k)
+        else:
+            return self.pick_without_replacement(k, replenish)
