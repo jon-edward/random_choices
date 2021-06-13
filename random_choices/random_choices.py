@@ -25,42 +25,42 @@ class UniformChoice(WeightedChoice):
         self.weight: float = 1
 
 
-class RandomChoices:
+class Randomizer:
     def __init__(self,
-                 choices: Optional[List[WeightedChoice]] = None,
+                 population: Optional[List[WeightedChoice]] = None,
                  rng: Callable[..., float] = random):
         """
         Selects choices from a list based on their relative weights.
 
-        :param choices: Initializes the choices.
+        :param population: Initializes the population.
         :param rng: A function that generates a random number in the range [0, 1).
         """
-        if choices is None:
-            self._choices: List[WeightedChoice] = []
+        if population is None:
+            self._population: List[WeightedChoice] = []
         else:
-            self._choices = []
-            self.choices = choices
+            self._population = []
+            self.population = population
         self.rng = rng
 
     @property
-    def choices(self) -> List[WeightedChoice]:
-        """List of WeightedChoices that RandomChoices uses for picking."""
-        return self._choices
+    def population(self) -> List[WeightedChoice]:
+        """List of WeightedChoices that Randomizer uses for picking."""
+        return self._population
 
-    @choices.setter
-    def choices(self, other: List[WeightedChoice]):
+    @population.setter
+    def population(self, other: List[WeightedChoice]):
         self._delete_cached_properties()
-        self._choices = other
+        self._population = other
 
     @cached_property
     def weights(self) -> List[float]:
-        """Index-corresponding list of weights for choices."""
-        return [choice.weight for choice in self.choices]
+        """Index-corresponding list of weights for population."""
+        return [choice.weight for choice in self.population]
 
     @cached_property
     def return_values(self) -> List[Any]:
-        """Index-corresponding list of return_values for choices."""
-        return [choice.return_value for choice in self.choices]
+        """Index-corresponding list of return_values for population."""
+        return [choice.return_value for choice in self.population]
 
     @cached_property
     def is_uniform(self) -> bool:
@@ -73,12 +73,12 @@ class RandomChoices:
 
     @cached_property
     def cumulative_weights(self) -> List[float]:
-        """Index-corresponding accumulated weights for choices."""
+        """Index-corresponding accumulated weights for population."""
         return list(accumulate(self.weights))
 
     @cached_property
     def total_weight(self) -> float:
-        """The total weight for choices."""
+        """The total weight for population."""
         return float(sum(self.weights))
 
     @property
@@ -88,18 +88,18 @@ class RandomChoices:
 
     @cached_property
     def normalized_weights(self) -> List[float]:
-        """The normalized weights for choices, such that they all sum up to 1.0"""
+        """The normalized weights for population, such that they all sum up to 1.0"""
         return list(map(lambda x: x / self.total_weight, self.weights))
 
     @cached_property
     def normalized_cumulative_weights(self) -> List[float]:
-        """Index-corresponding accumulated normal weights for choices."""
+        """Index-corresponding accumulated normal weights for population."""
         return list(accumulate(self.normalized_weights))
 
     def _delete_cached_properties(self):
         """
         This forces cached properties to be recalculated when called. This should
-        be done when dependent attributes are changed, like 'self.choices'.
+        be done when dependent attributes are changed, like 'self.population'.
         """
         props = [p for p in self.__class__.__dict__ if not p.startswith("__")]
         for prop in props:
@@ -112,7 +112,7 @@ class RandomChoices:
 
     def pick_with_replacement(self, k: int) -> List[Any]:
         """
-        Picks choices in self.choices based on their weighting. Replaces after each pick.
+        Picks choices in self.population based on their weighting. Replaces after each pick.
 
         :param k: Number of iterations for picking. This is the maximum length of the returned list.
         :return: The return_values of the choices picked.
@@ -122,19 +122,19 @@ class RandomChoices:
 
         if self.is_uniform:
             return [
-                self.return_values[floor(self.rng() * len(self.choices))] for _ in repeat(None, k)
+                self.return_values[floor(self.rng() * len(self.population))] for _ in repeat(None, k)
             ]
         else:
             return [
                 self.return_values[
-                    bisect(self.normalized_cumulative_weights, self.rng(), 0, len(self.choices) - 1)
+                    bisect(self.normalized_cumulative_weights, self.rng(), 0, len(self.population) - 1)
                 ]
                 for _ in repeat(None, k)
             ]
 
     def pick_without_replacement(self, k: int, replenish: bool = True) -> List[Any]:
         """
-        Picks choices in self.choices based on their weighting. Does not replace after each pick.
+        Picks choices in self.population based on their weighting. Does not replace after each pick.
 
         :param k: Number of iterations for picking. This is the maximum length of the returned list.
         :param replenish: Whether or not the picked choices should be replenished to the stored choices.
@@ -143,7 +143,7 @@ class RandomChoices:
         if self.is_empty:
             return []
 
-        choices = deepcopy(self.choices)
+        choices = deepcopy(self.population)
 
         def weights() -> List[float]:
             return [c.weight for c in choices]
@@ -164,6 +164,6 @@ class RandomChoices:
             del choices[choices_i]
 
         if not replenish:
-            self.choices = choices
+            self.population = choices
 
         return results
