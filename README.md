@@ -40,10 +40,10 @@ This is a simple solution to the above problem:
 from random_choices import Randomizer, WeightedChoice
 
 population = [
-    WeightedChoice("first choice",  1.0),
-    WeightedChoice("second choice", 1.0),
-    WeightedChoice("third choice",  1.0),
-    WeightedChoice("fourth choice", 2.0)
+    WeightedChoice("first choice",  weight=1.0),
+    WeightedChoice("second choice", weight=1.0),
+    WeightedChoice("third choice",  weight=1.0),
+    WeightedChoice("fourth choice", weight=2.0)
 ]
 randomizer = Randomizer(population)
 
